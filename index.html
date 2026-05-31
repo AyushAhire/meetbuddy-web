@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+<!-- ─── Primary SEO ─── -->
+<title>MeetBuddy — AI Meeting Recorder. No Bot. Privacy-First. Open Source.</title>
+<meta name="description" content="MeetBuddy records, transcribes, and summarises your Google Meet, Zoom, and Teams calls — without joining as a bot. Runs locally or self-hosted. Apache 2.0 open source." />
+<meta name="keywords" content="AI meeting recorder, meeting transcription, no bot meeting recorder, privacy meeting notes, self-hosted meeting AI, open source meeting assistant, Google Meet recorder, Whisper transcription" />
+<link rel="canonical" href="https://meetbuddy.app/" />
+
+<!-- ─── Open Graph ─── -->
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://meetbuddy.app/" />
+<meta property="og:title" content="MeetBuddy — AI Meeting Recorder. No Bot. Privacy-First." />
+<meta property="og:description" content="Records, transcribes and understands your meetings without joining as a bot. Runs locally. Open source. Apache 2.0." />
+<meta property="og:image" content="https://meetbuddy.app/og-image.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:site_name" content="MeetBuddy" />
+
+<!-- ─── Twitter Card ─── -->
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:site" content="@meetbuddyapp" />
+<meta name="twitter:title" content="MeetBuddy — AI Meeting Recorder. No Bot." />
+<meta name="twitter:description" content="Records, transcribes and understands your meetings without joining as a bot. Open source." />
+<meta name="twitter:image" content="https://meetbuddy.app/og-image.png" />
+
+<!-- ─── Structured Data ─── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MeetBuddy",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Chrome, Linux, macOS, Windows",
+  "offers": [
+    { "@type": "Offer", "price": "0", "priceCurrency": "USD", "name": "Self-Hosted" },
+    { "@type": "Offer", "price": "12", "priceCurrency": "USD", "priceSpecification": { "@type": "UnitPriceSpecification", "billingDuration": "P1M" }, "name": "Pro" }
+  ],
+  "description": "Privacy-first AI meeting intelligence. Captures, transcribes, and understands your calls locally — no bot, no third-party server.",
+  "url": "https://meetbuddy.app",
+  "sameAs": ["https://github.com/AyushAhire/meetbuddy"]
+}
+</script>
+
+<!-- ─── Favicon placeholder ─── -->
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+<!-- ─── Fonts ─── -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+/* ─── Design tokens ─── */
+:root {
+  --bg:       #080A0E;
+  --bg-2:     #0C0F14;
+  --surface:  #111520;
+  --surface-2:#161B27;
+  --border:   #1C2235;
+  --border-hi:#2A3350;
+  --text:     #E8ECF4;
+  --dim:      #7A85A0;
+  --mute:     #3D4560;
+  --accent:   #3D7BFF;
+  --accent-2: #6C5CE7;
+  --glow:     rgba(61,123,255,.22);
+  --green:    #00D48A;
+  --amber:    #FFB03A;
+  --red:      #FF4D6A;
+  --radius:   10px;
+  --radius-lg:16px;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  --sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+::selection { background: var(--accent); color: #fff; }
+img { display: block; max-width: 100%; }
+
+/* ─── Grid / Layout ─── */
+.container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+section { padding: 112px 0; position: relative; }
+@media (max-width: 768px) { section { padding: 72px 0; } }
+
+/* ─── Ambient mesh background ─── */
+.mesh {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 50% at 50% -10%, rgba(61,123,255,.12), transparent 65%),
+    radial-gradient(ellipse 35% 30% at 85% 15%, rgba(108,92,231,.07), transparent 60%),
+    radial-gradient(ellipse 40% 35% at 10% 85%, rgba(61,123,255,.05), transparent 70%);
+}
+/* subtle grid */
+.mesh::after {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 80%);
+  opacity: .35;
+}
+
+/* ─── Floating Nav ─── */
+.nav {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 100; width: min(1000px, calc(100% - 32px));
+  transition: top .3s, width .3s, background .3s, box-shadow .3s;
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 6px 6px 6px 22px;
+  border-radius: 999px;
+  background: rgba(12,15,20,.55);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 1px 2px rgba(0,0,0,.2), 0 8px 32px -12px rgba(0,0,0,.5),
+              inset 0 1px 0 rgba(255,255,255,.05);
+}
+.nav.scrolled { top: 10px; width: min(900px, calc(100% - 32px)); }
+.nav.scrolled .nav-inner {
+  background: rgba(8,10,14,.80);
+  box-shadow: 0 2px 8px rgba(0,0,0,.3), 0 16px 48px -12px rgba(0,0,0,.6),
+              inset 0 1px 0 rgba(255,255,255,.05);
+}
+.logo-mark {
+  display: flex; align-items: center; gap: 9px;
+  font-weight: 600; font-size: 15px; letter-spacing: -.015em;
+}
+.logo-mark svg { color: var(--accent); }
+.nav-links { display: flex; gap: 2px; align-items: center; }
+.nav-links a {
+  color: var(--dim); font-size: 13.5px; font-weight: 500;
+  padding: 8px 14px; border-radius: 999px;
+  transition: color .15s, background .15s;
+}
+.nav-links a:hover { color: var(--text); background: rgba(255,255,255,.05); }
+@media (max-width: 768px) { .nav-links { display: none; } }
+
+/* ─── Buttons ─── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 20px; border-radius: 8px;
+  font-size: 14px; font-weight: 500; white-space: nowrap;
+  transition: all .2s ease;
+}
+.btn-primary {
+  color: #fff; position: relative; overflow: hidden; isolation: isolate;
+  background: linear-gradient(135deg, #3D7BFF 0%, #6C5CE7 100%);
+  box-shadow: 0 0 0 1px rgba(100,140,255,.5), 0 8px 28px -8px rgba(61,123,255,.5),
+              inset 0 1px 0 rgba(255,255,255,.2);
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s, letter-spacing .2s;
+}
+.btn-primary::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.4) 50%, transparent 70%);
+  background-size: 220% 100%; background-position: 200% 0;
+  transition: background-position .8s cubic-bezier(.2,.8,.2,1);
+  mix-blend-mode: overlay; pointer-events: none;
+}
+.btn-primary:hover {
+  transform: translateY(-2px) scale(1.02); letter-spacing: .15px;
+  box-shadow: 0 0 0 1px rgba(130,170,255,.7), 0 18px 48px -10px rgba(61,123,255,.55),
+              0 0 32px -6px rgba(100,140,255,.4), inset 0 1px 0 rgba(255,255,255,.3);
+}
+.btn-primary:hover::before { background-position: -120% 0; }
+.btn-primary:active { transform: translateY(0) scale(.98); transition-duration: .08s; }
+.btn-outline {
+  background: transparent; color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-hi);
+}
+.btn-outline:hover { background: var(--surface); box-shadow: inset 0 0 0 1px #3a4560; }
+.btn-ghost { color: var(--dim); }
+.btn-ghost:hover { color: var(--text); }
+.nav .btn-primary { padding: 9px 18px; font-size: 13.5px; border-radius: 999px; }
+@media (max-width: 768px) { .nav .btn-primary { padding: 8px 14px; font-size: 13px; } }
+
+/* ─── Pill / Badge ─── */
+.pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 500; color: var(--accent);
+  letter-spacing: .03em; padding: 5px 12px; border-radius: 99px;
+  background: rgba(61,123,255,.08);
+  box-shadow: inset 0 0 0 1px rgba(61,123,255,.2);
+  margin-bottom: 28px;
+}
+.pill-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+}
+
+/* ─── Hero ─── */
+.hero {
+  padding: 148px 0 80px;
+  position: relative; z-index: 1;
+}
+.hero-layout {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 64px; align-items: center;
+}
+@media (max-width: 960px) { .hero-layout { grid-template-columns: 1fr; gap: 48px; } }
+.hero h1 {
+  font-size: clamp(38px, 5.5vw, 70px);
+  line-height: 1.03; letter-spacing: -.04em;
+  font-weight: 700; margin-bottom: 22px;
+}
+.hero h1 em {
+  font-style: normal;
+  background: linear-gradient(120deg, #3D7BFF, #A78BFF);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero .sub {
+  font-size: clamp(16px, 1.5vw, 18px);
+  color: var(--dim); max-width: 500px; line-height: 1.65; margin-bottom: 34px;
+}
+.hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 36px; }
+.social-proof {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  font-size: 13px; color: var(--mute);
+}
+.platform-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip {
+  font-family: var(--mono); font-size: 11px; color: var(--dim);
+  padding: 5px 11px; border-radius: 6px;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* ─── Terminal mockup ─── */
+.terminal {
+  background: #0B0E15;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    0 0 0 1px rgba(255,255,255,.02),
+    0 48px 96px -24px rgba(0,0,0,.7),
+    0 0 80px -20px var(--glow);
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transition: transform .3s cubic-bezier(.2,.8,.2,1);
+}
+.t-bar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 13px 18px; border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,.02);
+}
+.t-dot { width: 11px; height: 11px; border-radius: 50%; background: #2A3050; }
+.t-dot.r { background: #FF5F57; }
+.t-dot.y { background: #FFBD2E; }
+.t-dot.g { background: #28C840; }
+.t-url { margin-left: auto; font-family: var(--mono); font-size: 11.5px; color: var(--mute); }
+.t-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; font-family: var(--mono); font-size: 13.5px; }
+.status-row {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
+  padding: 6px 12px; border-radius: 99px;
+  background: rgba(0,212,138,.10); color: var(--green); font-size: 12px;
+}
+.pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+.query-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 16px; border-radius: 8px;
+  background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--border);
+}
+.query-row .prompt { color: var(--accent); }
+.cursor { display: inline-block; width: 7px; height: 15px; background: var(--accent); vertical-align: middle; margin-left: 2px; animation: blink 1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.answer-row {
+  padding: 16px 18px; border-radius: 10px;
+  background: linear-gradient(160deg, rgba(61,123,255,.07), rgba(61,123,255,.02));
+  box-shadow: inset 0 0 0 1px rgba(61,123,255,.18);
+  font-family: var(--sans); font-size: 14.5px; line-height: 1.6;
+}
+.answer-row .label {
+  display: block; font-family: var(--mono); font-size: 10px;
+  color: var(--accent); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px;
+}
+.src-row { font-family: var(--mono); font-size: 11px; color: var(--mute); display: flex; align-items: center; gap: 6px; }
+
+/* ─── Section heads ─── */
+.s-head { margin-bottom: 56px; max-width: 680px; }
+.s-head.center { text-align: center; margin-left: auto; margin-right: auto; }
+.s-head h2 {
+  font-size: clamp(30px, 3.8vw, 46px);
+  letter-spacing: -.03em; line-height: 1.1;
+  font-weight: 700; margin-bottom: 14px;
+}
+.s-head p { color: var(--dim); font-size: 17px; line-height: 1.65; }
+
+/* ─── Problem cards ─── */
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; }
+@media (max-width: 900px) { .grid-3 { grid-template-columns: 1fr; } }
+.p-card {
+  padding: 30px; border-radius: var(--radius-lg);
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  position: relative; overflow: hidden;
+  transition: box-shadow .2s;
+}
+.p-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(61,123,255,.4), transparent);
+  opacity: 0; transition: opacity .3s;
+}
+.p-card:hover { box-shadow: inset 0 0 0 1px var(--border-hi), 0 16px 40px -12px rgba(0,0,0,.4); }
+.p-card:hover::before { opacity: 1; }
+.p-icon {
+  width: 38px; height: 38px; border-radius: 10px; margin-bottom: 20px;
+  background: rgba(61,123,255,.09); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+}
+.p-card h3 { font-size: 17px; margin-bottom: 10px; letter-spacing: -.015em; }
+.p-card p { color: var(--dim); font-size: 14.5px; line-height: 1.6; }
+
+/* ─── How it works ─── */
+.steps {
+  display: flex; flex-direction: column; gap: 0;
+  border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.step {
+  display: grid; grid-template-columns: 96px 1fr; gap: 32px;
+  padding: 32px; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  align-items: start;
+  transition: background .2s;
+}
+.step:last-child { border-bottom: none; }
+.step:hover { background: var(--bg-2); }
+@media (max-width: 640px) { .step { grid-template-columns: 1fr; gap: 10px; padding: 24px; } }
+.step-n {
+  font-family: var(--mono); font-size: 12px; color: var(--accent); font-weight: 500;
+  padding: 4px 10px; border-radius: 6px; width: fit-content;
+  background: rgba(61,123,255,.08); box-shadow: inset 0 0 0 1px rgba(61,123,255,.2);
+}
+.step h3 { font-size: 19px; margin-bottom: 8px; letter-spacing: -.015em; }
+.step p { color: var(--dim); font-size: 15px; max-width: 540px; line-height: 1.6; }
+
+/* ─── Feature grid ─── */
+.grid-feat { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; }
+@media (max-width: 960px) { .grid-feat { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 580px) { .grid-feat { grid-template-columns: 1fr; } }
+.feat {
+  padding: 26px; border-radius: var(--radius-lg);
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  transition: transform .22s ease, box-shadow .22s, background .22s;
+}
+.feat:hover {
+  transform: translateY(-4px);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border-hi), 0 20px 50px -16px rgba(0,0,0,.5);
+}
+.feat .ic { font-size: 22px; margin-bottom: 14px; display: block; }
+.feat h3 { font-size: 15.5px; margin-bottom: 8px; letter-spacing: -.01em; }
+.feat p { color: var(--dim); font-size: 14px; line-height: 1.55; }
+
+/* ─── App preview ─── */
+.app-preview {
+  display: grid; grid-template-columns: 280px 1fr;
+  background: #0A0D14;
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--border), 0 48px 96px -24px rgba(0,0,0,.6);
+  overflow: hidden; min-height: 460px;
+}
+@media (max-width: 760px) { .app-preview { grid-template-columns: 1fr; } }
+.ap-sidebar {
+  padding: 20px; border-right: 1px solid var(--border);
+  background: rgba(255,255,255,.012);
+  display: flex; flex-direction: column; gap: 16px;
+}
+.ap-sidebar h5 {
+  font-family: var(--mono); font-size: 10.5px; color: var(--mute);
+  text-transform: uppercase; letter-spacing: .08em;
+}
+.m-item {
+  padding: 10px 12px; border-radius: 8px; cursor: pointer;
+  display: flex; flex-direction: column; gap: 4px;
+  transition: background .15s;
+}
+.m-item:hover { background: var(--surface); }
+.m-item.active { background: var(--surface); box-shadow: inset 0 0 0 1px var(--border-hi); }
+.m-item .t { font-size: 13.5px; display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.m-item .m { font-family: var(--mono); font-size: 10.5px; color: var(--mute); }
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); animation: pulse 1.6s infinite; }
+.ap-main { padding: 30px; display: flex; flex-direction: column; gap: 20px; }
+.ap-main h3 { font-size: 21px; letter-spacing: -.02em; }
+.ap-main .meta { font-family: var(--mono); font-size: 11.5px; color: var(--mute); margin-top: -12px; }
+.panel {
+  padding: 16px 18px; border-radius: 10px;
+  background: var(--bg-2); box-shadow: inset 0 0 0 1px var(--border);
+}
+.panel-label {
+  font-family: var(--mono); font-size: 10.5px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: .07em; margin-bottom: 9px;
+}
+.panel p, .panel li { font-size: 14px; line-height: 1.6; }
+.panel ul { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.panel ul li { display: flex; align-items: flex-start; gap: 10px; color: var(--dim); }
+.panel ul li::before {
+  content: ""; width: 14px; height: 14px; border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--border-hi); flex-shrink: 0; margin-top: 4px;
+}
+.panel.dec ul li::before { content: "•"; box-shadow: none; color: var(--accent); font-size: 18px; width: auto; margin-top: 0; }
+
+/* ─── Pricing ─── */
+.pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; align-items: stretch; }
+@media (max-width: 880px) { .pricing-grid { grid-template-columns: 1fr; } }
+.price-card {
+  padding: 30px; border-radius: var(--radius-lg);
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  display: flex; flex-direction: column; gap: 18px; position: relative;
+}
+.price-card.featured {
+  background: linear-gradient(160deg, rgba(61,123,255,.1), var(--surface));
+  box-shadow: inset 0 0 0 1px rgba(61,123,255,.45), 0 24px 64px -20px var(--glow);
+  transform: translateY(-6px);
+}
+@media (max-width: 880px) { .price-card.featured { transform: none; } }
+.badge {
+  position: absolute; top: -11px; right: 22px;
+  background: var(--accent); color: #fff;
+  font-size: 10.5px; font-weight: 600; padding: 4px 10px; border-radius: 99px;
+  font-family: var(--mono); letter-spacing: .03em;
+}
+.price-name { font-size: 13px; color: var(--dim); font-family: var(--mono); }
+.price-amt { font-size: 44px; font-weight: 700; letter-spacing: -.03em; line-height: 1.05; }
+.price-amt small { font-size: 14px; color: var(--dim); font-weight: 400; font-family: var(--mono); }
+.price-desc { color: var(--dim); font-size: 14px; line-height: 1.6; flex: 1; }
+.price-card .btn { justify-content: center; }
+
+/* ─── Open Source ─── */
+.os-section {
+  background: linear-gradient(180deg, #090B10, var(--bg));
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.os-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+@media (max-width: 880px) { .os-grid { grid-template-columns: 1fr; gap: 40px; } }
+.os-grid h2 { font-size: clamp(30px, 3.8vw, 44px); letter-spacing: -.03em; margin-bottom: 16px; line-height: 1.1; }
+.os-grid p { color: var(--dim); font-size: 16.5px; line-height: 1.65; margin-bottom: 24px; }
+.os-ctas { display: flex; gap: 12px; flex-wrap: wrap; }
+.code-block {
+  background: #08090E; border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 1px var(--border);
+  font-family: var(--mono); font-size: 13px; line-height: 1.75; overflow: hidden;
+}
+.code-head {
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  font-size: 11.5px; color: var(--mute); display: flex; justify-content: space-between;
+}
+.code-block pre { padding: 20px; overflow-x: auto; color: var(--text); }
+.t-com { color: #3D4560; }
+.t-key { color: #FF7AB6; }
+.t-fn { color: var(--accent); }
+.t-str { color: #7ED39D; }
+.t-typ { color: #FFB03A; }
+
+/* ─── Waitlist ─── */
+.waitlist-inner { text-align: center; max-width: 640px; margin: 0 auto; }
+.waitlist-inner h2 { font-size: clamp(30px, 3.8vw, 52px); letter-spacing: -.035em; margin-bottom: 14px; }
+.waitlist-inner .sub-copy { color: var(--dim); font-size: 17px; margin-bottom: 36px; line-height: 1.65; }
+.email-form-wrap {
+  background: var(--surface-2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: inset 0 0 0 1px var(--border-hi),
+              0 0 0 1px rgba(61,123,255,.06),
+              0 32px 72px -24px rgba(0,0,0,.6),
+              0 0 60px -20px var(--glow);
+  max-width: 480px;
+  margin: 0 auto 20px;
+}
+.email-form-wrap label {
+  display: block; text-align: left;
+  font-family: var(--mono); font-size: 11px; color: var(--dim);
+  letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px;
+}
+.email-form {
+  display: flex; gap: 8px;
+  background: var(--bg); border-radius: 10px;
+  box-shadow: inset 0 0 0 1px var(--border);
+  padding: 5px;
+  transition: box-shadow .2s;
+}
+.email-form:focus-within {
+  box-shadow: inset 0 0 0 1px var(--accent),
+              0 0 0 3px rgba(61,123,255,.12);
+}
+.email-form input {
+  flex: 1; min-width: 0;
+  background: transparent; border: none; color: var(--text);
+  font-family: var(--sans); font-size: 15px; padding: 10px 12px; outline: none;
+}
+.email-form input::placeholder { color: var(--mute); }
+.email-form .btn { padding: 10px 18px; font-size: 13.5px; flex-shrink: 0; }
+@media (max-width: 480px) {
+  .email-form { flex-direction: column; gap: 6px; }
+  .email-form .btn { width: 100%; justify-content: center; }
+}
+.form-note { font-size: 12.5px; color: var(--mute); margin-bottom: 28px; min-height: 18px; transition: color .3s; }
+.trust-row { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; font-size: 13px; color: var(--dim); }
+.trust-row span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ─── Footer ─── */
+footer { border-top: 1px solid var(--border); padding: 60px 0 44px; }
+.foot { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; margin-bottom: 36px; }
+@media (max-width: 640px) { .foot { grid-template-columns: 1fr; gap: 28px; } }
+.foot-brand p { color: var(--dim); font-size: 13.5px; margin-top: 12px; max-width: 300px; line-height: 1.6; }
+.foot-links { display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: 13.5px; color: var(--dim); align-items: flex-start; }
+.foot-links a:hover { color: var(--text); }
+.foot-bottom {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;
+  padding-top: 24px; border-top: 1px solid var(--border);
+  font-size: 12.5px; color: var(--mute);
+}
+.social-row { display: flex; gap: 16px; }
+.social-row a { color: var(--dim); }
+.social-row a:hover { color: var(--text); }
+
+/* ─── Scroll animations ─── */
+.fade { opacity: 0; transform: translateY(18px); }
+.fade.visible { animation: fadeUp .65s cubic-bezier(.2,.7,.2,1) forwards; }
+.d1 { animation-delay: .05s; }
+.d2 { animation-delay: .12s; }
+.d3 { animation-delay: .2s; }
+.d4 { animation-delay: .3s; }
+.d5 { animation-delay: .4s; }
+.d6 { animation-delay: .55s; }
+@keyframes fadeUp { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .fade, .btn-primary { animation: none !important; }
+  .fade { opacity: 1; transform: none; }
+}
+</style>
+</head>
+<body>
+
+<div class="mesh" aria-hidden="true"></div>
+
+<!-- ─── NAV ─── -->
+<nav class="nav" id="nav" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="/" class="logo-mark" aria-label="MeetBuddy home">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <line x1="3" y1="12" x2="3" y2="12"/>
+        <line x1="7" y1="9" x2="7" y2="15"/>
+        <line x1="11" y1="5" x2="11" y2="19"/>
+        <line x1="15" y1="8" x2="15" y2="16"/>
+        <line x1="19" y1="10" x2="19" y2="14"/>
+      </svg>
+      MeetBuddy
+    </a>
+    <nav class="nav-links" aria-label="Site sections">
+      <a href="#features">Features</a>
+      <a href="#how">How it works</a>
+      <a href="#pricing">Pricing</a>
+      <a href="https://github.com/AyushAhire/meetbuddy" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <a href="#waitlist" class="btn btn-primary">Get Early Access</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<header class="hero" role="banner">
+  <div class="container">
+    <div class="hero-layout">
+      <div>
+        <div class="pill fade d1">
+          <span class="pill-dot" aria-hidden="true"></span>
+          Open Source · Apache 2.0 · No Bot
+        </div>
+        <h1 class="fade d2">Your meetings have <em>a memory</em> now.</h1>
+        <p class="sub fade d3">
+          MeetBuddy records, transcribes, and understands your calls without joining as a bot.
+          Runs locally. Self-hostable. Your data stays yours.
+        </p>
+        <div class="hero-ctas fade d4">
+          <a href="#waitlist" class="btn btn-primary">Get Early Access →</a>
+          <a href="https://github.com/AyushAhire/meetbuddy" target="_blank" rel="noopener" class="btn btn-outline">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.81.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 014 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.74-3.65 3.94.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            Star on GitHub
+          </a>
+        </div>
+        <div class="social-proof fade d5">
+          <span>Works with</span>
+          <div class="platform-chips">
+            <span class="chip">Google Meet</span>
+            <span class="chip">Zoom</span>
+            <span class="chip">Teams</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Terminal mockup -->
+      <div class="fade d6" style="perspective:1400px">
+        <div class="terminal" id="mockup">
+          <div class="t-bar">
+            <span class="t-dot r"></span>
+            <span class="t-dot y"></span>
+            <span class="t-dot g"></span>
+            <span class="t-url">meetbuddy.app</span>
+          </div>
+          <div class="t-body">
+            <div class="status-row"><span class="pulse" aria-hidden="true"></span>Recording · Google Meet · 42:18</div>
+            <div class="query-row">
+              <span class="prompt" aria-hidden="true">›</span>
+              <span>What did we decide about the vendor?</span>
+              <span class="cursor" aria-hidden="true"></span>
+            </div>
+            <div class="answer-row">
+              <span class="label">Answer</span>
+              In the Oct 12 call with <strong>Acme Corp</strong>, the team decided to go with <strong>Vendor B</strong> for the API integration. Action item assigned to <strong>Sarah</strong> — due Nov 1.
+            </div>
+            <div class="src-row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 17H7A5 5 0 017 7h2M15 7h2a5 5 0 010 10h-2M8 12h8"/></svg>
+              Meeting: Acme Sync · Oct 12 · 42:18
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ─── PROBLEM ─── -->
+<section id="problem" aria-labelledby="problem-heading">
+  <div class="container">
+    <div class="s-head fade">
+      <h2 id="problem-heading">Your meeting knowledge is disappearing.</h2>
+      <p>Every week a decision gets lost. An action item dropped. A sensitive conversation handed off to a third-party server.</p>
+    </div>
+    <div class="grid-3">
+      <article class="p-card fade d1">
+        <div class="p-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <h3>The bot problem</h3>
+        <p>Fireflies, Otter, Grain — they all join as a visible bot. Clients notice. Trust erodes.</p>
+      </article>
+      <article class="p-card fade d2">
+        <div class="p-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18M3 12h18M3 19h12"/></svg>
+        </div>
+        <h3>The lost-context problem</h3>
+        <p>What did we decide last Tuesday? Nobody knows. Notes are scattered across Notion, Slack, and email.</p>
+      </article>
+      <article class="p-card fade d3">
+        <div class="p-icon" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        </div>
+        <h3>The privacy problem</h3>
+        <p>Your most sensitive conversations — pricing, strategy, HR — are on someone else's servers.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ─── HOW IT WORKS ─── -->
+<section id="how" aria-labelledby="how-heading">
+  <div class="container">
+    <div class="s-head fade">
+      <h2 id="how-heading">How MeetBuddy works</h2>
+      <p>Four steps. Thirty seconds to set up. Zero participants notified.</p>
+    </div>
+    <ol class="steps">
+      <li class="step fade d1">
+        <div class="step-n">01</div>
+        <div>
+          <h3>Install the Chrome extension</h3>
+          <p>Add to Chrome in 30 seconds. No account required. Or run the desktop tray app for cross-platform capture with PipeWire.</p>
+        </div>
+      </li>
+      <li class="step fade d2">
+        <div class="step-n">02</div>
+        <div>
+          <h3>Join your meeting normally</h3>
+          <p>MeetBuddy runs silently via <code>tabCapture</code> and <code>getUserMedia</code>. No bot joins. No notification to other participants.</p>
+        </div>
+      </li>
+      <li class="step fade d3">
+        <div class="step-n">03</div>
+        <div>
+          <h3>AI processes the recording</h3>
+          <p>Faster-Whisper transcribes the audio locally. An LLM (Ollama, GPT-4o, or Claude) extracts summaries, decisions, and action items.</p>
+        </div>
+      </li>
+      <li class="step fade d4">
+        <div class="step-n">04</div>
+        <div>
+          <h3>Ask anything, anytime</h3>
+          <p>Semantic search powered by pgvector spans your entire meeting history. "What did the client say about budget?" — answered instantly.</p>
+        </div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- ─── FEATURES ─── -->
+<section id="features" aria-labelledby="features-heading">
+  <div class="container">
+    <div class="s-head fade">
+      <h2 id="features-heading">Everything you need. Nothing you don't.</h2>
+      <p>Built for people who care about their meetings, their team, and their data.</p>
+    </div>
+    <div class="grid-feat">
+      <article class="feat fade d1"><span class="ic" aria-hidden="true">🔒</span><h3>No bot, no trace</h3><p>Captures audio via Chrome's tabCapture API. Other participants never see a bot or get notified.</p></article>
+      <article class="feat fade d2"><span class="ic" aria-hidden="true">🧠</span><h3>Cross-meeting memory</h3><p>Ask questions that span months of meetings. Context and knowledge builds automatically over time.</p></article>
+      <article class="feat fade d3"><span class="ic" aria-hidden="true">⚡</span><h3>Auto action items</h3><p>Every TODO, owner, and deadline is extracted by the LLM and tracked after each meeting ends.</p></article>
+      <article class="feat fade d4"><span class="ic" aria-hidden="true">🏠</span><h3>Fully self-hostable</h3><p>Run entirely on your own machine with faster-Whisper + Ollama. Absolutely zero cloud dependency.</p></article>
+      <article class="feat fade d5"><span class="ic" aria-hidden="true">🔌</span><h3>LLM-agnostic</h3><p>Switch between Ollama, Anthropic, OpenAI, or Groq with a single environment variable change.</p></article>
+      <article class="feat fade d6"><span class="ic" aria-hidden="true">📤</span><h3>Open source forever</h3><p>Apache 2.0 licensed. Every line is readable, auditable, and forkable. No black boxes.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- ─── APP PREVIEW ─── -->
+<section id="preview" aria-labelledby="preview-heading">
+  <div class="container">
+    <div class="s-head fade">
+      <h2 id="preview-heading">Built for how you actually work</h2>
+      <p>Every meeting becomes a structured, searchable record. Decisions, summaries, action items — all automatically organised.</p>
+    </div>
+    <div class="app-preview fade">
+      <aside class="ap-sidebar" aria-label="Meeting list">
+        <h5>● Live Now</h5>
+        <div class="m-item">
+          <div class="t"><span class="live-dot" aria-label="recording"></span>Design Review</div>
+          <div class="m">23:41 running</div>
+        </div>
+        <h5 style="margin-top:6px">✓ Done</h5>
+        <div class="m-item active" aria-current="true">
+          <div class="t">Acme Sync</div>
+          <div class="m">Oct 15 · 52 min</div>
+        </div>
+        <div class="m-item">
+          <div class="t">Sprint Planning</div>
+          <div class="m">Oct 14 · 38 min</div>
+        </div>
+        <div class="m-item">
+          <div class="t">1:1 with Sarah</div>
+          <div class="m">Oct 12 · 22 min</div>
+        </div>
+        <div class="m-item">
+          <div class="t">Client Discovery</div>
+          <div class="m">Oct 11 · 45 min</div>
+        </div>
+      </aside>
+      <main class="ap-main">
+        <h3>Acme Sync — Oct 15, 2024</h3>
+        <div class="meta">52 min · 4 participants · Auto-summarised</div>
+        <div class="panel">
+          <div class="panel-label">Summary</div>
+          <p>The team aligned on Q4 priorities. Vendor B selected for API integration. Budget approved at $40k. Launch target moved to December.</p>
+        </div>
+        <div class="panel">
+          <div class="panel-label">Action Items</div>
+          <ul>
+            <li>Sarah — Send vendor contract by Nov 1</li>
+            <li>Raj — Update Notion with Q4 decisions</li>
+            <li>Team — Schedule follow-up for Nov 8</li>
+          </ul>
+        </div>
+        <div class="panel dec">
+          <div class="panel-label">Decisions</div>
+          <ul>
+            <li>Vendor B selected over Vendor A</li>
+            <li>$40k budget approved</li>
+            <li>Launch moved to December</li>
+          </ul>
+        </div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ─── PRICING ─── -->
+<section id="pricing" aria-labelledby="pricing-heading">
+  <div class="container">
+    <div class="s-head center fade">
+      <h2 id="pricing-heading">Simple pricing. Start free.</h2>
+      <p>Self-host for free forever. Or skip the setup with the hosted version.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card fade d1">
+        <div class="price-name">Self-hosted</div>
+        <div class="price-amt">Free<small> forever</small></div>
+        <p class="price-desc">Full open source. Run on your own machine. All features included. Apache 2.0.</p>
+        <a href="https://github.com/AyushAhire/meetbuddy" class="btn btn-outline" target="_blank" rel="noopener">View on GitHub</a>
+      </div>
+      <div class="price-card featured fade d2">
+        <span class="badge">Most Popular</span>
+        <div class="price-name">Pro</div>
+        <div class="price-amt">$12<small>/month</small></div>
+        <p class="price-desc">Hosted — no setup. Unlimited meetings. 1 year history. GPT-4o + Claude integration.</p>
+        <a href="#waitlist" class="btn btn-primary">Get Early Access</a>
+      </div>
+      <div class="price-card fade d3">
+        <div class="price-name">Team</div>
+        <div class="price-amt">$25<small>/user/mo</small></div>
+        <p class="price-desc">Shared memory. Admin dashboard. Cross-team action item tracking. SSO.</p>
+        <a href="#waitlist" class="btn btn-outline">Contact Us</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── OPEN SOURCE ─── -->
+<section id="opensource" class="os-section" aria-labelledby="os-heading">
+  <div class="container">
+    <div class="os-grid">
+      <div class="fade">
+        <h2 id="os-heading">Built in the open.</h2>
+        <p>MeetBuddy is Apache 2.0 licensed. Every line of code is on GitHub — readable, auditable, and forkable. Privacy-first isn't a marketing claim here. It's something you can verify yourself.</p>
+        <div class="os-ctas">
+          <a href="https://github.com/AyushAhire/meetbuddy" class="btn btn-primary" target="_blank" rel="noopener">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8a8 8 0 005.47 7.59c.4.07.55-.17.55-.38v-1.33c-2.23.48-2.7-1.07-2.7-1.07-.36-.92-.89-1.17-.89-1.17-.73-.5.05-.49.05-.49.81.06 1.23.83 1.23.83.72 1.22 1.87.87 2.33.66.07-.52.28-.87.5-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.65 7.65 0 014 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.28.82 2.15 0 3.07-1.87 3.74-3.65 3.94.29.25.54.73.54 1.48v2.19c0 .21.15.46.55.38A8 8 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+            Star on GitHub ★
+          </a>
+          <a href="https://github.com/AyushAhire/meetbuddy/blob/master/README.md" class="btn btn-outline" target="_blank" rel="noopener">Read the Docs</a>
+        </div>
+      </div>
+      <div class="code-block fade d2">
+        <div class="code-head">
+          <span>apps/api/tasks/pipeline.py</span>
+          <span>main</span>
+        </div>
+<pre><span class="t-com"># Celery pipeline: transcribe → embed → insights</span>
+<span class="t-key">async def</span> <span class="t-fn">run_pipeline</span>(audio_path: <span class="t-typ">str</span>) -&gt; <span class="t-typ">MeetingInsights</span>:
+    model = <span class="t-fn">WhisperModel</span>(<span class="t-str">"large-v3"</span>, device=<span class="t-str">"cpu"</span>)
+    segments = model.<span class="t-fn">transcribe</span>(audio_path)
+    embeddings = <span class="t-key">await</span> <span class="t-fn">embed_segments</span>(segments)
+    <span class="t-key">return await</span> <span class="t-fn">extract_insights</span>(segments, embeddings)</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── WAITLIST ─── -->
+<section id="waitlist" aria-labelledby="waitlist-heading">
+  <div class="container">
+    <div class="waitlist-inner fade">
+      <h2 id="waitlist-heading">Get early access.</h2>
+      <p class="sub-copy">Rolling out the hosted version to early users. Join the list and be first in line.</p>
+      <div class="email-form-wrap">
+        <label for="wl-email">Your work email</label>
+        <form class="email-form" id="wl-form" novalidate>
+          <input type="email" id="wl-email" name="email" placeholder="you@company.com" required autocomplete="email" />
+          <button type="submit" class="btn btn-primary">Join Waitlist →</button>
+        </form>
+      </div>
+      <p class="form-note" id="form-note" aria-live="polite">No spam. Unsubscribe anytime.</p>
+      <div class="trust-row">
+        <span>🔒 Private by default</span>
+        <span>★ Apache 2.0 open source</span>
+        <span>🇮🇳 Built in Pune, India</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer role="contentinfo">
+  <div class="container">
+    <div class="foot">
+      <div class="foot-brand">
+        <a href="/" class="logo-mark" aria-label="MeetBuddy home">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <line x1="3" y1="12" x2="3" y2="12"/>
+            <line x1="7" y1="9" x2="7" y2="15"/>
+            <line x1="11" y1="5" x2="11" y2="19"/>
+            <line x1="15" y1="8" x2="15" y2="16"/>
+            <line x1="19" y1="10" x2="19" y2="14"/>
+          </svg>
+          MeetBuddy
+        </a>
+        <p>Your meetings, remembered. No bot joins your call.</p>
+      </div>
+      <nav class="foot-links" aria-label="Footer navigation">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="https://github.com/AyushAhire/meetbuddy" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/AyushAhire/meetbuddy/blob/master/README.md" target="_blank" rel="noopener">Docs</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <span>Built by <a href="https://github.com/AyushAhire" target="_blank" rel="noopener" style="color:var(--dim);text-decoration:underline;text-underline-offset:3px">Ayush Ahire</a> in Pune, India 🇮🇳 · Apache 2.0</span>
+      <div class="social-row">
+        <a href="https://twitter.com/meetbuddyapp" target="_blank" rel="noopener" aria-label="Twitter / X">Twitter</a>
+        <a href="https://github.com/AyushAhire/meetbuddy" target="_blank" rel="noopener" aria-label="GitHub">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- ─── Scripts ─── -->
+<script>
+/* Nav scroll effect */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), { passive: true });
+
+/* Intersection observer for scroll fade-ins */
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade').forEach(el => observer.observe(el));
+
+/* Waitlist form */
+document.getElementById('wl-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const note = document.getElementById('form-note');
+  const wrap = this.closest('.email-form-wrap') || this;
+  wrap.style.opacity = '.5';
+  wrap.style.pointerEvents = 'none';
+  note.textContent = "You're on the list! 🎉 We'll be in touch soon.";
+  note.style.color = 'var(--green)';
+});
+
+/* 3D tilt on mockup */
+const mockup = document.getElementById('mockup');
+if (mockup && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const wrap = mockup.parentElement;
+  wrap.addEventListener('mousemove', e => {
+    const r = wrap.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    mockup.style.transform = `rotateX(${(-py * 5).toFixed(2)}deg) rotateY(${(px * 7).toFixed(2)}deg)`;
+  });
+  wrap.addEventListener('mouseleave', () => { mockup.style.transform = 'rotateX(0) rotateY(0)'; });
+}
+</script>
+
+</body>
+</html>
