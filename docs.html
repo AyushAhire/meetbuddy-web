@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Docs — MeetBuddy</title>
+<meta name="description" content="MeetBuddy documentation. Quick start, Chrome extension setup, desktop tray app, environment variables, API reference, and self-hosting guide." />
+<link rel="canonical" href="https://meetbuddy.app/docs" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+<style>
+/* ─── Tokens (same as index.html) ─── */
+:root {
+  --bg:        #080A0E;
+  --bg-2:      #0C0F14;
+  --surface:   #111520;
+  --surface-2: #161B27;
+  --border:    #1C2235;
+  --border-hi: #2A3350;
+  --text:      #E8ECF4;
+  --dim:       #7A85A0;
+  --mute:      #3D4560;
+  --accent:    #3D7BFF;
+  --accent-2:  #6C5CE7;
+  --glow:      rgba(61,123,255,.22);
+  --green:     #00D48A;
+  --amber:     #FFB03A;
+  --red:       #FF4D6A;
+  --radius:    10px;
+  --radius-lg: 16px;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  --sans: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--sans); font-size: 16px;
+  line-height: 1.7; -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+::selection { background: var(--accent); color: #fff; }
+
+/* ─── Mesh bg ─── */
+.mesh {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background:
+    radial-gradient(ellipse 55% 50% at 50% -10%, rgba(61,123,255,.10), transparent 65%),
+    radial-gradient(ellipse 35% 30% at 85% 15%,  rgba(108,92,231,.06), transparent 60%);
+}
+.mesh::after {
+  content: ""; position: absolute; inset: 0;
+  background-image: linear-gradient(var(--border) 1px, transparent 1px),
+                    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, #000 30%, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 50% at 50% 0%, #000 30%, transparent 80%);
+  opacity: .3;
+}
+
+/* ─── Nav ─── */
+.nav {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 100; width: min(1000px, calc(100% - 32px));
+  transition: top .3s, width .3s, background .3s;
+}
+.nav-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; padding: 6px 6px 6px 22px;
+  border-radius: 999px;
+  background: rgba(12,15,20,.55);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255,255,255,.07);
+  box-shadow: 0 1px 2px rgba(0,0,0,.2), 0 8px 32px -12px rgba(0,0,0,.5),
+              inset 0 1px 0 rgba(255,255,255,.05);
+}
+.nav.scrolled { top: 10px; width: min(900px, calc(100% - 32px)); }
+.nav.scrolled .nav-inner { background: rgba(8,10,14,.82); }
+.logo-mark {
+  display: flex; align-items: center; gap: 9px;
+  font-weight: 600; font-size: 15px; letter-spacing: -.015em;
+}
+.logo-mark svg { color: var(--accent); }
+.nav-links { display: flex; gap: 2px; }
+.nav-links a {
+  color: var(--dim); font-size: 13.5px; font-weight: 500;
+  padding: 8px 14px; border-radius: 999px;
+  transition: color .15s, background .15s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--text); background: rgba(255,255,255,.05); }
+@media (max-width: 768px) { .nav-links { display: none; } }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 9px 18px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 500; white-space: nowrap;
+  transition: all .2s;
+}
+.btn-primary {
+  color: #fff;
+  background: linear-gradient(135deg, #3D7BFF 0%, #6C5CE7 100%);
+  box-shadow: 0 0 0 1px rgba(100,140,255,.5), 0 8px 28px -8px rgba(61,123,255,.5),
+              inset 0 1px 0 rgba(255,255,255,.2);
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px rgba(130,170,255,.7), 0 14px 40px -8px rgba(61,123,255,.55),
+              inset 0 1px 0 rgba(255,255,255,.3);
+}
+.btn-outline {
+  background: transparent; color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--border-hi);
+}
+.btn-outline:hover { background: var(--surface); }
+
+/* ─── Docs layout ─── */
+.docs-wrap {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  padding-top: 100px;
+  min-height: 100vh;
+  position: relative; z-index: 1;
+}
+@media (max-width: 900px) { .docs-wrap { grid-template-columns: 1fr; padding-top: 88px; } }
+
+/* ─── Sidebar ─── */
+.sidebar {
+  position: sticky; top: 88px;
+  height: calc(100vh - 88px);
+  overflow-y: auto; padding: 32px 24px 32px 0;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+@media (max-width: 900px) { .sidebar { display: none; } }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.sidebar-section { margin-bottom: 28px; }
+.sidebar-heading {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  color: var(--mute); text-transform: uppercase; letter-spacing: .08em;
+  margin-bottom: 10px; padding: 0 12px;
+}
+.sidebar-link {
+  display: block; padding: 7px 12px; border-radius: 7px;
+  font-size: 13.5px; color: var(--dim);
+  transition: color .15s, background .15s;
+  cursor: pointer;
+}
+.sidebar-link:hover { color: var(--text); background: var(--surface); }
+.sidebar-link.active { color: var(--accent); background: rgba(61,123,255,.08); }
+
+/* ─── Doc content ─── */
+.doc-content {
+  padding: 32px 0 120px 48px;
+  border-left: 1px solid var(--border);
+  min-width: 0;
+}
+@media (max-width: 900px) { .doc-content { padding: 24px 0 80px 0; border-left: none; } }
+
+/* ─── Doc typography ─── */
+.doc-content h1 {
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 700; letter-spacing: -.035em; line-height: 1.1;
+  margin-bottom: 14px;
+}
+.doc-content .lead {
+  font-size: 17px; color: var(--dim); line-height: 1.7;
+  margin-bottom: 48px; max-width: 640px;
+  padding-bottom: 32px; border-bottom: 1px solid var(--border);
+}
+.doc-section { margin-bottom: 64px; scroll-margin-top: 96px; }
+.doc-section h2 {
+  font-size: 22px; font-weight: 600; letter-spacing: -.02em;
+  margin-bottom: 16px; color: var(--text);
+  display: flex; align-items: center; gap: 10px;
+}
+.doc-section h2 .anchor {
+  color: var(--mute); font-size: 14px; opacity: 0;
+  transition: opacity .15s;
+}
+.doc-section h2:hover .anchor { opacity: 1; }
+.doc-section h3 {
+  font-size: 16px; font-weight: 600; letter-spacing: -.01em;
+  margin: 28px 0 10px; color: var(--text);
+}
+.doc-section p { color: var(--dim); font-size: 15px; line-height: 1.75; margin-bottom: 14px; }
+.doc-section p:last-child { margin-bottom: 0; }
+.doc-section ul, .doc-section ol {
+  color: var(--dim); font-size: 15px; line-height: 1.75;
+  padding-left: 20px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px;
+}
+.doc-section li { padding-left: 4px; }
+.doc-section strong { color: var(--text); font-weight: 600; }
+.doc-section a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.doc-section a:hover { color: #6fa3ff; }
+
+/* ─── Code blocks ─── */
+pre {
+  background: #08090E; border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--border);
+  padding: 18px 20px; overflow-x: auto;
+  font-family: var(--mono); font-size: 13px; line-height: 1.8;
+  color: var(--text); margin: 12px 0 20px;
+  position: relative;
+}
+code {
+  font-family: var(--mono); font-size: 13px;
+  background: var(--surface); color: var(--text);
+  padding: 2px 7px; border-radius: 5px;
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+pre code { background: none; padding: 0; box-shadow: none; font-size: inherit; }
+.copy-btn {
+  position: absolute; top: 10px; right: 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--mute);
+  padding: 4px 10px; border-radius: 5px;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  cursor: pointer; transition: color .15s, background .15s;
+}
+.copy-btn:hover { color: var(--text); background: var(--surface-2); }
+.copy-btn.copied { color: var(--green); }
+
+/* syntax colours */
+.k { color: #FF7AB6; }  /* keyword */
+.f { color: var(--accent); }  /* function */
+.s { color: #7ED39D; }  /* string */
+.c { color: var(--mute); }  /* comment */
+.n { color: var(--amber); }  /* number / type */
+
+/* ─── Callout boxes ─── */
+.callout {
+  display: flex; gap: 14px; padding: 16px 18px;
+  border-radius: var(--radius); margin: 16px 0 24px;
+  font-size: 14.5px; line-height: 1.65;
+}
+.callout.tip {
+  background: rgba(0,212,138,.07);
+  box-shadow: inset 0 0 0 1px rgba(0,212,138,.2);
+  color: #a8f0d8;
+}
+.callout.warn {
+  background: rgba(255,176,58,.07);
+  box-shadow: inset 0 0 0 1px rgba(255,176,58,.2);
+  color: #ffdda0;
+}
+.callout.info {
+  background: rgba(61,123,255,.07);
+  box-shadow: inset 0 0 0 1px rgba(61,123,255,.2);
+  color: #a8c4ff;
+}
+.callout-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+/* ─── Tables ─── */
+.table-wrap { overflow-x: auto; margin: 12px 0 24px; border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+thead tr { border-bottom: 1px solid var(--border); }
+th {
+  text-align: left; padding: 10px 16px;
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  color: var(--mute); text-transform: uppercase; letter-spacing: .06em;
+  background: var(--surface);
+}
+td { padding: 11px 16px; color: var(--dim); border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: rgba(255,255,255,.015); }
+td code { font-size: 12.5px; }
+
+/* ─── Method badges ─── */
+.method {
+  display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 600;
+  padding: 2px 8px; border-radius: 4px; letter-spacing: .02em; flex-shrink: 0;
+}
+.method.get  { background: rgba(0,212,138,.12); color: var(--green); }
+.method.post { background: rgba(61,123,255,.12); color: #7ab3ff; }
+.method.ws   { background: rgba(255,176,58,.12); color: var(--amber); }
+
+.api-row {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 12px 16px; border-radius: 8px;
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  margin-bottom: 8px; font-size: 14px;
+}
+.api-row .path { font-family: var(--mono); font-size: 13px; color: var(--text); flex: 1; }
+.api-row .desc { color: var(--dim); font-size: 13.5px; }
+
+/* ─── Step list ─── */
+.step-list { display: flex; flex-direction: column; gap: 0; border-radius: var(--radius-lg); overflow: hidden; box-shadow: inset 0 0 0 1px var(--border); margin-bottom: 24px; }
+.step-row {
+  display: grid; grid-template-columns: 48px 1fr; gap: 20px;
+  padding: 20px 22px; background: var(--bg); border-bottom: 1px solid var(--border);
+  align-items: start;
+}
+.step-row:last-child { border-bottom: none; }
+.step-n {
+  font-family: var(--mono); font-size: 12px; color: var(--accent);
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(61,123,255,.1); box-shadow: inset 0 0 0 1px rgba(61,123,255,.25);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+}
+.step-row h3 { font-size: 15px; margin-bottom: 5px; }
+.step-row p { font-size: 14px; color: var(--dim); margin: 0; }
+
+/* ─── Breadcrumb ─── */
+.breadcrumb {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--mute); margin-bottom: 24px;
+  font-family: var(--mono);
+}
+.breadcrumb a { color: var(--dim); }
+.breadcrumb a:hover { color: var(--text); }
+.breadcrumb span { color: var(--mute); }
+
+/* ─── TOC mobile toggle ─── */
+.toc-toggle {
+  display: none;
+  align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: var(--radius);
+  background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
+  font-size: 13.5px; color: var(--dim); margin-bottom: 24px; cursor: pointer;
+}
+@media (max-width: 900px) { .toc-toggle { display: flex; } }
+.toc-mobile {
+  display: none; background: var(--surface-2);
+  border-radius: var(--radius); box-shadow: inset 0 0 0 1px var(--border);
+  padding: 12px; margin-bottom: 28px;
+  flex-direction: column; gap: 2px;
+}
+.toc-mobile.open { display: flex; }
+.toc-mobile a {
+  padding: 7px 12px; border-radius: 6px; font-size: 13.5px; color: var(--dim);
+  transition: color .15s, background .15s;
+}
+.toc-mobile a:hover { color: var(--text); background: rgba(255,255,255,.04); }
+
+/* ─── Footer ─── */
+footer {
+  position: relative; z-index: 1;
+  border-top: 1px solid var(--border); padding: 36px 0 32px;
+}
+.foot-inner {
+  max-width: 1200px; margin: 0 auto; padding: 0 24px;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 16px;
+  font-size: 13px; color: var(--mute);
+}
+.foot-links { display: flex; gap: 20px; }
+.foot-links a { color: var(--dim); }
+.foot-links a:hover { color: var(--text); }
+
+/* ─── Scroll fade ─── */
+.fade { opacity: 0; transform: translateY(12px); }
+.fade.visible { animation: fadeUp .5s cubic-bezier(.2,.7,.2,1) forwards; }
+@keyframes fadeUp { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fade { opacity: 1; transform: none; animation: none; } }
+</style>
+</head>
+<body>
+
+<div class="mesh" aria-hidden="true"></div>
+
+<!-- ─── NAV ─── -->
+<nav class="nav" id="nav" aria-label="Main navigation">
+  <div class="nav-inner">
+    <a href="/" class="logo-mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+        <line x1="3" y1="12" x2="3" y2="12"/>
+        <line x1="7" y1="9" x2="7" y2="15"/>
+        <line x1="11" y1="5" x2="11" y2="19"/>
+        <line x1="15" y1="8" x2="15" y2="16"/>
+        <line x1="19" y1="10" x2="19" y2="14"/>
+      </svg>
+      MeetBuddy
+    </a>
+    <nav class="nav-links">
+      <a href="/">Home</a>
+      <a href="/#features">Features</a>
+      <a href="/docs.html" class="active">Docs</a>
+      <a href="https://github.com/AyushAhire/meetbuddy" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+    <a href="/#waitlist" class="btn btn-primary">Get Early Access</a>
+  </div>
+</nav>
+
+<!-- ─── DOCS LAYOUT ─── -->
+<div class="docs-wrap">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" aria-label="Documentation navigation">
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Getting Started</div>
+      <a class="sidebar-link" href="#overview">Overview</a>
+      <a class="sidebar-link" href="#prerequisites">Prerequisites</a>
+      <a class="sidebar-link" href="#quickstart">Quick Start</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Capture Methods</div>
+      <a class="sidebar-link" href="#extension">Chrome Extension</a>
+      <a class="sidebar-link" href="#tray">Desktop Tray App</a>
+      <a class="sidebar-link" href="#audio-devices">Audio Device Setup</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Configuration</div>
+      <a class="sidebar-link" href="#env">Environment Variables</a>
+      <a class="sidebar-link" href="#llm">LLM Providers</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Reference</div>
+      <a class="sidebar-link" href="#api">API Reference</a>
+      <a class="sidebar-link" href="#architecture">Architecture</a>
+      <a class="sidebar-link" href="#stack">Tech Stack</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-heading">Contributing</div>
+      <a class="sidebar-link" href="#contributing">How to Contribute</a>
+      <a class="sidebar-link" href="#license">License</a>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="doc-content">
+
+    <div class="breadcrumb">
+      <a href="/">meetbuddy.app</a>
+      <span>/</span>
+      <span>docs</span>
+    </div>
+
+    <!-- Mobile TOC toggle -->
+    <button class="toc-toggle" id="toc-toggle" aria-expanded="false">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>
+      On this page
+    </button>
+    <div class="toc-mobile" id="toc-mobile">
+      <a href="#overview">Overview</a>
+      <a href="#prerequisites">Prerequisites</a>
+      <a href="#quickstart">Quick Start</a>
+      <a href="#extension">Chrome Extension</a>
+      <a href="#tray">Desktop Tray App</a>
+      <a href="#audio-devices">Audio Device Setup</a>
+      <a href="#env">Environment Variables</a>
+      <a href="#llm">LLM Providers</a>
+      <a href="#api">API Reference</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#stack">Tech Stack</a>
+      <a href="#contributing">Contributing</a>
+    </div>
+
+    <h1 class="fade">Documentation</h1>
+    <p class="lead fade">MeetBuddy is a privacy-first AI meeting recorder. It captures, transcribes, and understands your calls without joining as a bot — runs entirely on your machine or self-hosted on your own server.</p>
+
+    <!-- ─── OVERVIEW ─── -->
+    <section class="doc-section fade" id="overview">
+      <h2>Overview <a class="anchor" href="#overview">#</a></h2>
+      <p>MeetBuddy gives you two ways to capture audio, feeding the same backend pipeline:</p>
+      <ul>
+        <li><strong>Chrome Extension</strong> — captures tab audio via <code>chrome.tabCapture</code> and your mic via <code>getUserMedia</code>. Works on Google Meet; streams chunks in real time over WebSocket.</li>
+        <li><strong>Desktop Tray App</strong> — uses PipeWire at the OS level to capture mic + speaker output simultaneously. Works with any platform — Zoom, Teams, Meet, or any app that uses your speakers.</li>
+      </ul>
+      <p>Both paths feed the same Celery pipeline: faster-Whisper transcribes the audio, sentence-transformers generate pgvector embeddings, and an LLM extracts summaries, decisions, and action items.</p>
+      <div class="callout info">
+        <span class="callout-icon">ℹ️</span>
+        <span>Your meeting data never leaves your machine unless you explicitly configure a cloud LLM provider (OpenAI, Anthropic, Groq). With Ollama as the provider, everything is 100% local.</span>
+      </div>
+    </section>
+
+    <!-- ─── PREREQUISITES ─── -->
+    <section class="doc-section fade" id="prerequisites">
+      <h2>Prerequisites <a class="anchor" href="#prerequisites">#</a></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Tool</th><th>Version</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td><code>Docker + Compose</code></td><td>24+</td><td>Runs Postgres, Redis, MinIO</td></tr>
+            <tr><td><code>Python</code></td><td>3.11+</td><td>API, worker, capture daemon, tray app</td></tr>
+            <tr><td><code>Node.js</code></td><td>20+</td><td>Web dashboard</td></tr>
+            <tr><td><code>pnpm</code></td><td>8+</td><td>JS package manager</td></tr>
+            <tr><td><code>PipeWire</code></td><td>any</td><td>Audio capture on Linux (usually pre-installed)</td></tr>
+            <tr><td><code>Chrome</code></td><td>any</td><td>Extension method only</td></tr>
+            <tr><td><code>Ollama</code></td><td>latest</td><td>Optional — fully local LLM inference</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>Install pnpm if you don't have it:</p>
+      <pre><code>npm i -g pnpm</code><button class="copy-btn" data-copy="npm i -g pnpm">copy</button></pre>
+    </section>
+
+    <!-- ─── QUICK START ─── -->
+    <section class="doc-section fade" id="quickstart">
+      <h2>Quick Start <a class="anchor" href="#quickstart">#</a></h2>
+      <div class="step-list">
+        <div class="step-row">
+          <div class="step-n">1</div>
+          <div><h3>Clone and configure</h3>
+            <p>Copy the example env file and fill in at minimum <code>JWT_SECRET</code> and <code>NEXTAUTH_SECRET</code>.</p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">2</div>
+          <div><h3>Start infrastructure</h3>
+            <p>Spins up Postgres, Redis, MinIO, the FastAPI server, and the Celery worker.</p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">3</div>
+          <div><h3>Start the web dashboard</h3>
+            <p>Next.js dev server on <code>localhost:3000</code>.</p>
+          </div>
+        </div>
+        <div class="step-row">
+          <div class="step-n">4</div>
+          <div><h3>Create an account and grab your token</h3>
+            <p>Register at <code>localhost:3000</code> — you'll need the JWT for the tray app or extension settings.</p>
+          </div>
+        </div>
+      </div>
+<pre><span class="c"># 1. Clone and configure</span>
+git clone https://github.com/AyushAhire/meetbuddy.git
+cd meetbuddy
+cp .env.example .env   <span class="c"># edit JWT_SECRET, NEXTAUTH_SECRET, LLM key</span>
+
+<span class="c"># 2. Start infra + API + worker</span>
+./scripts/start.sh
+
+<span class="c"># 3. Start web dashboard</span>
+cd apps/web && pnpm dev
+
+<span class="c"># 4. Open http://localhost:3000 → register → copy your token</span></pre>
+      <button class="copy-btn" style="position:static;display:block;margin-top:-12px;width:fit-content" data-copy="git clone https://github.com/AyushAhire/meetbuddy.git
+cd meetbuddy
+cp .env.example .env
+./scripts/start.sh
+cd apps/web && pnpm dev">copy all</button>
+    </section>
+
+    <!-- ─── CHROME EXTENSION ─── -->
+    <section class="doc-section fade" id="extension">
+      <h2>Chrome Extension <a class="anchor" href="#extension">#</a></h2>
+      <p>The extension uses <a href="https://developer.chrome.com/docs/extensions/reference/tabCapture/" target="_blank" rel="noopener">chrome.tabCapture</a> for speaker audio and <code>getUserMedia</code> for your microphone. It's built with <a href="https://www.plasmo.com/" target="_blank" rel="noopener">Plasmo</a> (Chrome MV3).</p>
+      <h3>Build and load</h3>
+<pre><span class="c"># Build in watch mode</span>
+cd apps/extension && pnpm dev</pre>
+      <ol>
+        <li>Go to <code>chrome://extensions</code></li>
+        <li>Enable <strong>Developer mode</strong> (top-right toggle)</li>
+        <li>Click <strong>Load unpacked</strong> → select <code>apps/extension/.plasmo/chrome-mv3-dev</code></li>
+      </ol>
+      <h3>First use</h3>
+      <p>Navigate to a Google Meet tab. Click the MeetBuddy icon in the toolbar. Open <strong>Settings</strong> and paste your JWT from the dashboard, then click <strong>Start Recording</strong>.</p>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span>The extension streams audio chunks over WebSocket to <code>/api/v1/ws/{"{meeting_id}"}</code> in real time, so transcription starts processing before the meeting ends.</span>
+      </div>
+    </section>
+
+    <!-- ─── TRAY APP ─── -->
+    <section class="doc-section fade" id="tray">
+      <h2>Desktop Tray App <a class="anchor" href="#tray">#</a></h2>
+      <p>The tray app uses PipeWire's <code>pw-record</code> to capture both your microphone and the speaker output (sink monitor) at the OS level. This works with <em>any</em> meeting platform — not just Chrome tabs.</p>
+      <h3>Install dependencies</h3>
+<pre>pip install pystray pillow pywebview
+<span class="c"># httpx is already installed via apps/api requirements</span></pre>
+      <h3>Launch</h3>
+<pre><span class="c"># Launch the tray app (persists across sessions)</span>
+DISPLAY=:0 PYSTRAY_BACKEND=xorg python3 apps/tray/tray.py</pre>
+      <p>Left-click the tray icon to open the in-app window. On first launch, open <strong>Settings</strong> and paste your JWT token from the dashboard.</p>
+      <h3>Run the capture daemon directly</h3>
+      <p>You can also run the daemon headlessly and control recording from the web UI:</p>
+<pre><span class="c"># Start daemon (controlled from localhost:3000)</span>
+python3 apps/capture/capture.py --daemon
+
+<span class="c"># Or one-shot from CLI — Ctrl+C stops and auto-uploads</span>
+python3 apps/capture/capture.py --token &lt;jwt&gt;</pre>
+      <h3>Run as a systemd service</h3>
+      <p>A service file is included at <code>scripts/meetbuddy-capture.service</code> for running the capture daemon on login.</p>
+<pre><span class="c"># Copy and enable the user service</span>
+cp scripts/meetbuddy-capture.service ~/.config/systemd/user/
+systemctl --user enable --now meetbuddy-capture</pre>
+    </section>
+
+    <!-- ─── AUDIO DEVICES ─── -->
+    <section class="doc-section fade" id="audio-devices">
+      <h2>Audio Device Setup <a class="anchor" href="#audio-devices">#</a></h2>
+      <p>By default MeetBuddy auto-selects your default mic and the default output monitor. To use specific devices:</p>
+<pre><span class="c"># List available PipeWire nodes</span>
+python3 apps/capture/capture.py --list
+
+<span class="c"># Override specific devices</span>
+python3 apps/capture/capture.py \
+  --mic "alsa_input.pci-0000_00_1f.3.analog-stereo" \
+  --monitor "alsa_output.pci-0000_00_1f.3.analog-stereo.monitor"</pre>
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <span>PipeWire is required for the tray app. On Ubuntu 22.04+ and most modern distros it's pre-installed. On older systems you may need to install <code>pipewire</code> and <code>pipewire-audio</code> and restart the session.</span>
+      </div>
+    </section>
+
+    <!-- ─── ENV VARS ─── -->
+    <section class="doc-section fade" id="env">
+      <h2>Environment Variables <a class="anchor" href="#env">#</a></h2>
+      <p>All configuration lives in <code>.env</code> at the repo root. Copy <code>.env.example</code> to get started. Required keys are marked below.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Variable</th><th>Default</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td><code>JWT_SECRET</code></td><td><em>required</em></td><td>Signs user JWTs — change this before deploying</td></tr>
+            <tr><td><code>NEXTAUTH_SECRET</code></td><td><em>required</em></td><td>NextAuth session secret — also change this</td></tr>
+            <tr><td><code>LLM_PROVIDER</code></td><td><code>ollama</code></td><td><code>ollama</code> · <code>anthropic</code> · <code>openai</code></td></tr>
+            <tr><td><code>ANTHROPIC_API_KEY</code></td><td>—</td><td>Required when <code>LLM_PROVIDER=anthropic</code></td></tr>
+            <tr><td><code>OPENAI_API_KEY</code></td><td>—</td><td>Required when <code>LLM_PROVIDER=openai</code></td></tr>
+            <tr><td><code>GROQ_API_KEY</code></td><td>—</td><td>Optional — faster cloud transcription via Groq Whisper</td></tr>
+            <tr><td><code>OLLAMA_BASE_URL</code></td><td><code>http://localhost:11434</code></td><td>Ollama server URL</td></tr>
+            <tr><td><code>WHISPER_MODEL</code></td><td><code>base</code></td><td><code>tiny</code> · <code>base</code> · <code>small</code> · <code>medium</code> · <code>large-v3</code></td></tr>
+            <tr><td><code>GOOGLE_CLIENT_ID</code></td><td>—</td><td>Optional — enables Google OAuth login</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout warn">
+        <span class="callout-icon">⚠️</span>
+        <span>Never commit a real <code>.env</code> file. The repo's <code>.gitignore</code> already excludes it, but double-check before pushing.</span>
+      </div>
+    </section>
+
+    <!-- ─── LLM PROVIDERS ─── -->
+    <section class="doc-section fade" id="llm">
+      <h2>LLM Providers <a class="anchor" href="#llm">#</a></h2>
+      <p>All LLM calls are routed through <code>apps/api/services/llm.py</code>. Switch providers by setting <code>LLM_PROVIDER</code> in your <code>.env</code>.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Provider</th><th>Value</th><th>What you need</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Ollama</strong> (default)</td>
+              <td><code>ollama</code></td>
+              <td><a href="https://ollama.ai" target="_blank" rel="noopener">Ollama</a> running locally. Pull a model first: <code>ollama pull llama3</code></td>
+            </tr>
+            <tr>
+              <td><strong>Anthropic</strong></td>
+              <td><code>anthropic</code></td>
+              <td>Set <code>ANTHROPIC_API_KEY</code> in <code>.env</code></td>
+            </tr>
+            <tr>
+              <td><strong>OpenAI</strong></td>
+              <td><code>openai</code></td>
+              <td>Set <code>OPENAI_API_KEY</code> in <code>.env</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout tip">
+        <span class="callout-icon">💡</span>
+        <span><strong>Free option:</strong> Set <code>GROQ_API_KEY</code> to use Groq's free tier for both transcription (Whisper) and inference (Llama 3) with a single API key and very low latency.</span>
+      </div>
+    </section>
+
+    <!-- ─── API REFERENCE ─── -->
+    <section class="doc-section fade" id="api">
+      <h2>API Reference <a class="anchor" href="#api">#</a></h2>
+      <p>Base URL: <code>http://localhost:8000/api/v1</code></p>
+      <h3>Auth</h3>
+      <div class="api-row"><span class="method post">POST</span><span class="path">/auth/register</span><span class="desc">Create a new user account</span></div>
+      <div class="api-row"><span class="method post">POST</span><span class="path">/auth/login</span><span class="desc">Get a JWT access token</span></div>
+      <h3>Meetings</h3>
+      <div class="api-row"><span class="method get">GET</span><span class="path">/meetings</span><span class="desc">List all meetings for the authenticated user</span></div>
+      <div class="api-row"><span class="method post">POST</span><span class="path">/meetings</span><span class="desc">Create a new meeting record</span></div>
+      <div class="api-row"><span class="method get">GET</span><span class="path">/meetings/{"{id}"}</span><span class="desc">Get meeting detail including full transcript</span></div>
+      <h3>Upload &amp; Processing</h3>
+      <div class="api-row"><span class="method post">POST</span><span class="path">/upload/audio</span><span class="desc">Upload an audio file for processing</span></div>
+      <div class="api-row"><span class="method post">POST</span><span class="path">/upload/complete</span><span class="desc">Trigger the transcription + insight pipeline</span></div>
+      <h3>Search</h3>
+      <div class="api-row"><span class="method get">GET</span><span class="path">/query?q=...</span><span class="desc">Semantic search across all meetings via pgvector</span></div>
+      <h3>Streaming</h3>
+      <div class="api-row"><span class="method ws">WS</span><span class="path">/ws/{"{meeting_id}"}</span><span class="desc">Stream audio chunks from the Chrome extension in real time</span></div>
+      <h3>Health</h3>
+      <div class="api-row"><span class="method get">GET</span><span class="path">/health</span><span class="desc">Returns <code>200 OK</code> when the API is up</span></div>
+    </section>
+
+    <!-- ─── ARCHITECTURE ─── -->
+    <section class="doc-section fade" id="architecture">
+      <h2>Architecture <a class="anchor" href="#architecture">#</a></h2>
+      <p>Both capture methods feed the same Celery pipeline. Here's the full data flow:</p>
+<pre><span class="c">Option A — Desktop tray app</span>
+PipeWire (mic + monitor)
+  └─► capture.py daemon  :7779
+        └─► POST /api/v1/upload
+
+<span class="c">Option B — Chrome extension</span>
+tabCapture + getUserMedia
+  └─► WebSocket /api/v1/ws/{"{meeting_id}"}
+
+<span class="c">Both paths →</span>
+Celery pipeline
+  ├─ faster-whisper  ──► transcript segments
+  ├─ sentence-transformers  ──► pgvector embeddings
+  └─ LLM (Ollama / Anthropic / OpenAI)
+       └─► summary + action items + decisions
+                │
+                ▼
+     Next.js dashboard  (meetings, search, insights)</pre>
+      <h3>Project structure</h3>
+<pre>meetbuddy/
+├── apps/
+│   ├── api/                    <span class="c"># FastAPI backend</span>
+│   │   ├── routes/             <span class="c"># auth, meetings, upload, query, ws</span>
+│   │   ├── services/llm.py     <span class="c"># unified LLM abstraction</span>
+│   │   └── tasks/pipeline.py   <span class="c"># Celery chain</span>
+│   ├── capture/capture.py      <span class="c"># PipeWire daemon</span>
+│   ├── tray/tray.py            <span class="c"># pystray + pywebview app</span>
+│   ├── web/                    <span class="c"># Next.js 14 dashboard</span>
+│   └── extension/              <span class="c"># Plasmo Chrome MV3</span>
+├── docker/                     <span class="c"># Compose stack</span>
+└── scripts/
+    ├── start.sh
+    └── meetbuddy-capture.service</pre>
+    </section>
+
+    <!-- ─── TECH STACK ─── -->
+    <section class="doc-section fade" id="stack">
+      <h2>Tech Stack <a class="anchor" href="#stack">#</a></h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+          <tbody>
+            <tr><td>Tray app</td><td>pystray, pywebview (GTK/WebKit), Pillow</td></tr>
+            <tr><td>Capture</td><td>PipeWire (<code>pw-record</code>), Python asyncio</td></tr>
+            <tr><td>Extension</td><td>Plasmo (Chrome MV3), TypeScript, WebSocket, Web Audio API</td></tr>
+            <tr><td>API</td><td>FastAPI, SQLAlchemy 2.0 async, Alembic, Celery</td></tr>
+            <tr><td>AI</td><td>faster-whisper, sentence-transformers, LangChain</td></tr>
+            <tr><td>Database</td><td>PostgreSQL 16 + pgvector, Redis</td></tr>
+            <tr><td>Storage</td><td>MinIO (local) / Cloudflare R2 (production)</td></tr>
+            <tr><td>Dashboard</td><td>Next.js 14 App Router, Tailwind CSS, shadcn/ui, TanStack Query</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ─── CONTRIBUTING ─── -->
+    <section class="doc-section fade" id="contributing">
+      <h2>Contributing <a class="anchor" href="#contributing">#</a></h2>
+      <p>MeetBuddy is open source and contributions are very welcome. The project is early-stage so there's lots of room to make a real impact.</p>
+      <h3>Good first areas</h3>
+      <ul>
+        <li>Fixing issues labeled <code>good first issue</code> on GitHub</li>
+        <li>Adding support for more meeting platforms in the extension</li>
+        <li>Improving the Next.js dashboard UI</li>
+        <li>Writing tests for the FastAPI routes</li>
+        <li>macOS or Windows support for the tray app (currently Linux-only)</li>
+      </ul>
+      <h3>Dev workflow</h3>
+<pre><span class="c"># Fork → clone → create a branch</span>
+git checkout -b feat/your-feature
+
+<span class="c"># Make changes, then open a PR against master</span>
+git push origin feat/your-feature</pre>
+      <p>Please keep PRs focused — one feature or fix per PR makes review much faster.</p>
+    </section>
+
+    <!-- ─── LICENSE ─── -->
+    <section class="doc-section fade" id="license">
+      <h2>License <a class="anchor" href="#license">#</a></h2>
+      <p>MeetBuddy is released under the <a href="https://github.com/AyushAhire/meetbuddy/blob/master/LICENSE" target="_blank" rel="noopener">Apache 2.0 License</a>. You're free to use, modify, and distribute it — even commercially — as long as you retain the license notice.</p>
+    </section>
+
+  </main>
+</div>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="foot-inner">
+    <span>© 2025 MeetBuddy · Built by <a href="https://github.com/AyushAhire" target="_blank" rel="noopener" style="color:var(--dim);text-decoration:underline;text-underline-offset:3px">Ayush Ahire</a> in Pune 🇮🇳 · Apache 2.0</span>
+    <div class="foot-links">
+      <a href="/">Home</a>
+      <a href="https://github.com/AyushAhire/meetbuddy" target="_blank" rel="noopener">GitHub</a>
+      <a href="/#waitlist">Early Access</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* Nav scroll */
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), { passive: true });
+
+/* Scroll-based sidebar highlight */
+const sections = document.querySelectorAll('.doc-section');
+const links = document.querySelectorAll('.sidebar-link');
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(l => l.classList.remove('active'));
+      const match = document.querySelector(`.sidebar-link[href="#${e.target.id}"]`);
+      if (match) match.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0% -70% 0%' });
+sections.forEach(s => observer.observe(s));
+
+/* Fade-in on scroll */
+const fadeObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); fadeObserver.unobserve(e.target); } });
+}, { threshold: 0.06 });
+document.querySelectorAll('.fade').forEach(el => fadeObserver.observe(el));
+
+/* Copy buttons */
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const target = btn.dataset.copy || btn.previousElementSibling?.textContent || '';
+    navigator.clipboard.writeText(target.trim()).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  });
+});
+
+/* Mobile TOC */
+const tocToggle = document.getElementById('toc-toggle');
+const tocMobile = document.getElementById('toc-mobile');
+tocToggle.addEventListener('click', () => {
+  const open = tocMobile.classList.toggle('open');
+  tocToggle.setAttribute('aria-expanded', open);
+});
+tocMobile.querySelectorAll('a').forEach(a => {
+  a.addEventListener('click', () => { tocMobile.classList.remove('open'); tocToggle.setAttribute('aria-expanded', 'false'); });
+});
+</script>
+
+</body>
+</html>
